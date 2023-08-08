@@ -22,20 +22,25 @@ function FileUploader() {
     formData.append("jpgFile", jpgFile);
     formData.append("pdfFile", pdfFile);
 
+    console.log(formData.get("jpgFile"));
+    console.log(formData.get("pdfFile"));
+
     try {
-      const res = await axios.post("http://localhost:3000/api/v1/upload", formData, {
-        method: "POST",
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "Access-Control-Allow-Origin": "*",
-        },
+      const res = await axios.post(
+        "http://localhost:3000/api/v1/upload",
+        formData,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      ).then((res) => {
+        console.log(res);
+        const blob = new Blob([res.data], { type: "application/pdf" });
+        const link = window.URL.createObjectURL(blob);
+        setDownloadLink(link);
       });
-
-      const data = await res.data;
-
-      const blob = new Blob([data], { type: "application/pdf" });
-      const link = window.URL.createObjectURL(blob);
-      setDownloadLink(link);
     } catch (err) {
       console.error(err);
     }
@@ -60,10 +65,7 @@ function FileUploader() {
       <button onClick={handleSubmit}>Convertir & Fusionner</button>
       {downloadLink && (
         <div>
-          <h3>Télécharger le PDF</h3>
-          <a href={downloadLink} download="fichier.pdf">
-            Télécharger
-          </a>
+          <h3>Bien enregistré !</h3>
         </div>
       )}
     </div>
