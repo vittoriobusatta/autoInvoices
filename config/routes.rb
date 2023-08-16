@@ -1,8 +1,7 @@
 Rails.application.routes.draw do
+  get 'webhooks/receive'
   namespace :api do
     namespace :v1 do
-      resources :books
-      post '/upload', to: 'upload#create'
     end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

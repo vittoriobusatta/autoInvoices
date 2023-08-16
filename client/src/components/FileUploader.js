@@ -5,6 +5,7 @@ function FileUploader() {
   const [jpgFile, setJpgFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
   const [downloadLink, setDownloadLink] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleJpgFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,7 +27,7 @@ function FileUploader() {
     console.log(formData.get("pdfFile"));
 
     try {
-      const res = await axios.post(
+      await axios.post(
         "http://localhost:3000/api/v1/upload",
         formData,
         {
@@ -40,6 +41,9 @@ function FileUploader() {
         const blob = new Blob([res.data], { type: "application/pdf" });
         const link = window.URL.createObjectURL(blob);
         setDownloadLink(link);
+      }).catch((err) => {
+        console.log(err.response.data.error);
+        setError(err.response.data.error);
       });
     } catch (err) {
       console.error(err);
@@ -67,6 +71,11 @@ function FileUploader() {
         <div>
           <h3>Bien enregistré !</h3>
         </div>
+      )}
+      {error && (
+        <div>
+          <h3>{error}</h3>
+          </div>
       )}
     </div>
   );
