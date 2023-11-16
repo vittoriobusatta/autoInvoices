@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import axios from "axios";
+import styled from "styled-components";
 
 function FileUploader() {
   const [jpgFile, setJpgFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
-  const [downloadLink, setDownloadLink] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  console.log(pdfFile);
 
   const handleJpgFileChange = (e) => {
     const file = e.target.files[0];
@@ -19,66 +22,117 @@ function FileUploader() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const formData = new FormData();
     formData.append("jpgFile", jpgFile);
     formData.append("pdfFile", pdfFile);
 
-    console.log(formData.get("jpgFile"));
-    console.log(formData.get("pdfFile"));
-
     try {
-      await axios.post(
-        "http://localhost:3000/api/v1/upload",
-        formData,
-        {
+      await axios
+        .post("http://localhost:3000/api/v1/upload", formData, {
           method: "POST",
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
-      ).then((res) => {
-        console.log(res);
-        const blob = new Blob([res.data], { type: "application/pdf" });
-        const link = window.URL.createObjectURL(blob);
-        setDownloadLink(link);
-      }).catch((err) => {
-        console.log(err.response.data.error);
-        setError(err.response.data.error);
-      });
+          responseType: "blob",
+        })
+        .then((res) => {
+          const url = window.URL.createObjectURL(new Blob([res.data]));
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "facture.pdf");
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        })
+        .finally(() => {
+          setJpgFile(null);
+          setPdfFile(null);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.log(err.response.data.error);
+          setError(err.response.data.error);
+        });
     } catch (err) {
       console.error(err);
     }
   };
   return (
-    <div>
-      <h1>Uploader des fichiers</h1>
-      <div>
-        <div>
-          <h2>jpg</h2>
-          <input
-            type="file"
-            accept=".jpg,.jpeg"
-            onChange={handleJpgFileChange}
-          />
-        </div>
-        <div>
-          <h2>pdf</h2>
-          <input type="file" accept=".pdf" onChange={handlePdfFileChange} />
-        </div>
-      </div>
-      <button onClick={handleSubmit}>Convertir & Fusionner</button>
-      {downloadLink && (
-        <div>
-          <h3>Bien enregistré !</h3>
-        </div>
-      )}
-      {error && (
-        <div>
-          <h3>{error}</h3>
-          </div>
-      )}
-    </div>
+    <Container>
+      <Title>Fusionner les factures et bons de commande</Title>
+      <FileInputContainer>
+        <FileInputLabel>Met ici ta facture (jpg)</FileInputLabel>
+        <FileInput
+          type="file"
+          accept=".jpg,.jpeg"
+          onChange={handleJpgFileChange}
+        />
+      </FileInputContainer>
+      <FileInputContainer>
+        <FileInputLabel>Met ici le bon de commande (pdf)</FileInputLabel>
+        <FileInput type="file" accept=".pdf" onChange={handlePdfFileChange} />
+      </FileInputContainer>
+      <SubmitButton onClick={handleSubmit} disabled={loading}>
+        {loading ? "Fusion en cours..." : "Fusionner"}
+      </SubmitButton>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+    </Container>
   );
 }
 
 export default FileUploader;
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #f3f4f6;
+  min-height: 100vh;
+`;
+
+const Title = styled.h1`
+  color: #333;
+  margin-bottom: 20px;
+`;
+
+const FileInputContainer = styled.div`
+  margin-bottom: 15px;
+`;
+
+const FileInputLabel = styled.h2`
+  margin-bottom: 5px;
+  color: #555;
+`;
+
+const FileInput = styled.input`
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+`;
+
+const SubmitButton = styled.button`
+  padding: 10px 15px;
+  margin-top: 22px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  &:hover {
+    background-color: #0056b3;
+  }
+  &:disabled {
+    background-color: #ccc;
+  }
+`;
+
+const ErrorMessage = styled.h3`
+  color: red;
+`;

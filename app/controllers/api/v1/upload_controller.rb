@@ -68,8 +68,29 @@ class Api::V1::UploadController < ApplicationController
 
       job = cloudconvert.jobs.wait(job.id)
 
+      exported_url_task_id = nil
+      job.tasks.each do |task|
+        if task.operation == 'export/url'
+          exported_url_task_id = task.id
+          break 
+        end
+      end
+      
+      unless exported_url_task_id.nil?
+        exported_url_task = cloudconvert.tasks.wait(exported_url_task_id)
+        file = exported_url_task.result.files.first
+    
+        file_path = Rails.root.join('tmp', 'factures', file.filename)
+    
+        export = cloudconvert.download(file.url, destination: file_path)
+    
+        send_file(file_path, filename: file.filename, type: 'application/pdf', disposition: 'attachment')
 
-    render json: { message: "Fichiers traités avec succès."}, status: :ok
+        return
+      end
+
+        render json: { message: "Une erreur est survenue lors du traitement des fichiers."}, status: :unprocessable_entity
+
 
     rescue => e
       puts e.message
