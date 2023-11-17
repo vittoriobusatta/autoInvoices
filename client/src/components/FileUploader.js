@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
 
+const domain = process.env.REACT_APP_BACK_DOMAIN;
+
 function FileUploader() {
   const [jpgFile, setJpgFile] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  console.log(pdfFile);
+  const [fileName, setFileName] = useState(null);
 
   const handleJpgFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,10 +27,9 @@ function FileUploader() {
     const formData = new FormData();
     formData.append("jpgFile", jpgFile);
     formData.append("pdfFile", pdfFile);
-
     try {
       await axios
-        .post("http://localhost:3000/api/v1/upload", formData, {
+        .post(`${domain}/api/v1/upload`, formData, {
           method: "POST",
           headers: {
             "Content-Type": "multipart/form-data",
@@ -40,7 +40,7 @@ function FileUploader() {
           const url = window.URL.createObjectURL(new Blob([res.data]));
           const link = document.createElement("a");
           link.href = url;
-          link.setAttribute("download", "facture.pdf");
+          link.setAttribute("download", `facture_${fileName}.pdf`);
           document.body.appendChild(link);
           link.click();
           link.parentNode.removeChild(link);
@@ -62,6 +62,14 @@ function FileUploader() {
   return (
     <Container>
       <Title>Fusionner les factures et bons de commande</Title>
+      <FileInputContainer>
+        <FileInputLabel>Numéro de facture</FileInputLabel>
+        <FileInput
+          type="text"
+          onChange={(e) => setFileName(e.target.value)}
+          value={fileName}
+        />
+      </FileInputContainer>
       <FileInputContainer>
         <FileInputLabel>Met ici ta facture (jpg)</FileInputLabel>
         <FileInput
